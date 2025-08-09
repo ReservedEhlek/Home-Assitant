@@ -1,6 +1,6 @@
 blueprint:
   name: Water Leak Notification (iPhone + Email via SMTP)
-  description: Sends an iOS Critical Alert and an email via SMTP when a water leak is detected.
+  description: Sends an iOS Critical Alert and an email via SMTP when a water leak is detected. Allows overriding the recipient(s) in the automation.
   domain: automation
   input:
     water_sensor:
@@ -17,8 +17,14 @@ blueprint:
           integration: mobile_app
     email_service:
       name: Email Notify Service
-      description: The notify service for sending email (e.g., notify.zoho_smth).
+      description: The SMTP notify service name (e.g., notify.zoho_smth).
       default: "notify.zoho_smth"
+      selector:
+        text: {}
+    email_recipients:
+      name: Override Recipient(s) (Optional)
+      description: Comma-separated email addresses. Leave empty to use default from SMTP config.
+      default: ""
       selector:
         text: {}
     custom_prefix:
@@ -38,9 +44,11 @@ variables:
   time_now: "{{ now().strftime('%H:%M:%S') }}"
   prefix: !input custom_prefix
   final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
+  recipients: "{{ (!input email_recipients) | default('', true) }}"
 
 action:
   - parallel:
+      # iOS Critical Alert
       - device_id: !input notify_device
         domain: mobile_app
         type: notify
@@ -51,9 +59,15 @@ action:
               name: default
               critical: 1
               volume: 1.0
-      - service: "{{ email_service }}"
+
+      # Email via SMTP
+      - service: !input email_service
         data:
           title: "🚨 Water Leak Alert"
           message: "{{ final_message }}"
+          {% if recipients != "" %}
+          target:
+            - "{{ recipients }}"
+          {% endif %}
 
 mode: single
