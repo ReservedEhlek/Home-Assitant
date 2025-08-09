@@ -1,33 +1,36 @@
 blueprint:
-  name: Water Leak Detection
-  description: Send notification when water leak is detected
+  name: Water Leak Notification
+  description: Send a mobile notification when a water leak sensor is triggered.
   domain: automation
   input:
-    water_sensor:
+    water_leak_sensor:
       name: Water Leak Sensor
-      description: Select the water leak sensor
+      description: The binary sensor that detects a water leak.
       selector:
         entity:
           domain: binary_sensor
     notify_device:
-      name: Mobile Device
-      description: Select your mobile device for notifications
+      name: Notify Device
+      description: The mobile device to send the notification to.
       selector:
         device:
           integration: mobile_app
-
-mode: single
+    message:
+      name: Notification Message
+      description: The message to send when a leak is detected.
+      default: "Water leak detected!"
+      selector:
+        text: {}
 
 trigger:
-  - type: turned_on
-    entity_id: !input water_sensor
-    domain: binary_sensor
-    trigger: entity
-
-condition: []
+  - platform: state
+    entity_id: !input water_leak_sensor
+    to: "on"
 
 action:
   - device_id: !input notify_device
     domain: mobile_app
     type: notify
-    message: Water leak
+    message: !input message
+
+mode: single
