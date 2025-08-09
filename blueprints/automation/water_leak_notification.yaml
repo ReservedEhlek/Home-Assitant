@@ -1,5 +1,5 @@
 blueprint:
-  name: Water Leak Notification v0.3
+  name: Water Leak Notification v0.4
   description: Sends a critical iOS alert and a rich HTML-formatted email via SMTP when a water leak is detected.
   domain: automation
   input:
@@ -67,42 +67,43 @@ action:
               critical: 1
               volume: 1.0
 
-      - service: !input email_service
-        message: "Water leak detected!"
+      - service: !input email_service        
         data:
+          message: "Water leak detected!"
           title: "🚨 WATER LEAK ALERT – {{ sensor_name }}"
-          html: >
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="UTF-8">
-              <style>
-                body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-                .container { max-width: 600px; margin: auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                .header { background-color: #d32f2f; color: #fff; padding: 20px; text-align: center; font-size: 24px; }
-                .content { padding: 20px; color: #333; line-height: 1.5; }
-                .alert-box { border: 2px solid #d32f2f; background: #ffebee; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
-                .footer { background: #eeeeee; text-align: center; padding: 10px; font-size: 12px; color: #777; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">🚨 WATER LEAK ALERT 🚨</div>
-                <div class="content">
-                  <div class="alert-box">
-                    <strong>Sensor:</strong> {{ sensor_name }}<br>
-                    <strong>Location:</strong> {{ location }}<br>
-                    <strong>Detected At:</strong> {{ time_now }}
+          data:
+            html: >
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <style>
+                  body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+                  .container { max-width: 600px; margin: auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                  .header { background-color: #d32f2f; color: #fff; padding: 20px; text-align: center; font-size: 24px; }
+                  .content { padding: 20px; color: #333; line-height: 1.5; }
+                  .alert-box { border: 2px solid #d32f2f; background: #ffebee; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+                  .footer { background: #eeeeee; text-align: center; padding: 10px; font-size: 12px; color: #777; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">🚨 WATER LEAK ALERT 🚨</div>
+                  <div class="content">
+                    <div class="alert-box">
+                      <strong>Sensor:</strong> {{ sensor_name }}<br>
+                      <strong>Location:</strong> {{ location }}<br>
+                      <strong>Detected At:</strong> {{ time_now }}
+                    </div>
+                    <p><strong>Action Recommended:</strong> Inspect immediately and shut off the water supply if needed. Potential for flooding exists.</p>
                   </div>
-                  <p><strong>Action Recommended:</strong> Inspect immediately and shut off the water supply if needed. Potential for flooding exists.</p>
+                  <div class="footer">
+                    Automated alert from Home Assistant.<br>
+                    Please do not reply.
+                  </div>
                 </div>
-                <div class="footer">
-                  Automated alert from Home Assistant.<br>
-                  Please do not reply.
-                </div>
-              </div>
-            </body>
-            </html>      
+              </body>
+              </html>      
           recipients: "{{ recipients_list | default(none) }}"          
 
 mode: single
