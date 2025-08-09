@@ -1,6 +1,6 @@
 blueprint:
-  name: Water Leak Notification (Dynamic Message)
-  description: Send a mobile notification when a water leak sensor is triggered, with automatic time and sensor name in the message.
+  name: Water Leak Notification (Always iPhone Critical Alert)
+  description: Sends a Critical Alert with time and sensor name when a water leak is detected. Always uses iPhone-style alert settings.
   domain: automation
   input:
     water_sensor:
@@ -39,19 +39,10 @@ action:
     type: notify
     message: "{{ final_message }}"
     data:
-      importance: high
-      sticky: true
-      persistent: true
-      ttl: 0
-      priority: high
-      vibrationPattern: "100, 200, 100, 200, 500"
-      channel: alarm_stream
       push:
         sound:
           name: default
           critical: 1
           volume: 1.0
-
-
 
 mode: single
