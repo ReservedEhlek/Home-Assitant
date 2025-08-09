@@ -20,7 +20,6 @@ mode: single
 
 trigger:
   - type: turned_on
-    platform: device
     entity_id: !input water_sensor
     domain: binary_sensor
 
