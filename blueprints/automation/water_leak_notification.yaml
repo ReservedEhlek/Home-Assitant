@@ -73,8 +73,7 @@ action:
             value_template: "{{ input.light_choice_type == 'Area' }}"
         sequence:
           - service: light.turn_on
-            target:
-              area_id: !input area
+            target: !input area
             data:
               rgb_color: [255, 0, 0]
               brightness_pct: 100
