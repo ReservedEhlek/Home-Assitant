@@ -3,7 +3,7 @@ blueprint:
   description: Send a mobile notification when a water leak sensor is triggered.
   domain: automation
   input:
-    water_leak_sensor:
+    water_sensor:
       name: Water Leak Sensor
       description: The binary sensor that detects a water leak.
       selector:
@@ -24,7 +24,7 @@ blueprint:
 
 trigger:
   - platform: state
-    entity_id: !input water_leak_sensor
+    entity_id: !input water_sensor
     to: "on"
 
 action:
