@@ -19,6 +19,13 @@ blueprint:
       description: Email address to send notifications to
       selector:
         text:
+    notify_device:
+      name: Mobile Device
+      description: Select your mobile device notification service
+      selector:
+        entity:
+          domain: notify
+          integration: mobile_app
     light_choice_type:
       name: Light Selection Type
       description: Choose whether to select individual lights or an area
@@ -78,7 +85,7 @@ action:
               rgb_color: [255, 0, 0]
               brightness_pct: 100
 
-  - service: notify.mobile_app
+  - service: "{{ notify_device }}"
     data:
       title: "{{ notification_title }}"
       message: "{{ notification_message }}"
