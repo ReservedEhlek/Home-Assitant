@@ -25,28 +25,7 @@ blueprint:
       selector:
         device:
           integration: mobile_app
-    light_choice_type:
-      name: Light Selection Type
-      description: Choose whether to select individual lights or an area
-      selector:
-        select:
-          options:
-            - Individual Lights
-            - Area
-    lights:
-      name: Select Lights
-      description: Select specific lights to turn red (only if Individual Lights is selected)
-      selector:
-        target:
-          entity:
-            domain: light
-      default: {}
-    area:
-      name: Select Area
-      description: Select an area whose lights will turn red (only if Area is selected)
-      selector:
-        area:
-      default: {}
+    
 
 trigger:
   - platform: state
@@ -64,27 +43,6 @@ variables:
 condition: []
 
 action:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ input.light_choice_type == 'Individual Lights' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input lights
-            data:
-              rgb_color: [255, 0, 0]
-              brightness_pct: 100
-      - conditions:
-          - condition: template
-            value_template: "{{ input.light_choice_type == 'Area' }}"
-        sequence:
-          - service: light.turn_on
-            target:
-              area_id: !input area
-            data:
-              rgb_color: [255, 0, 0]
-              brightness_pct: 100
-
   - service: !input notify_device
     data:
       title: "{{ notification_title }}"
