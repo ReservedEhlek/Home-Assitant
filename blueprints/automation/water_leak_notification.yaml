@@ -1,72 +1,34 @@
 blueprint:
-  name: Water Leak Detection and Alert
-  description: >
-    Creates an automation for IKEA BADRING water leak sensors that:
-    - Sends mobile push notifications
-    - Shows persistent notifications in HA
-    - Sends email alerts
-    - Changes selected lights to red
+  name: Water Leak Detection
+  description: Send notification when water leak is detected
   domain: automation
   input:
     water_sensor:
       name: Water Leak Sensor
-      description: Select the water leak sensor to monitor
+      description: Select the water leak sensor
       selector:
         entity:
           domain: binary_sensor
-    notification_email:
-      name: Email Address
-      description: Email address to send notifications to
-      selector:
-        text:
     notify_device:
       name: Mobile Device
-      description: Select your mobile device notification service
+      description: Select your mobile device for notifications
       selector:
         device:
           integration: mobile_app
-    
+
+mode: single
 
 trigger:
-  - platform: state
+  - type: turned_on
+    platform: device
     entity_id: !input water_sensor
-    to: "on"
-
-variables:
-  sensor_name: "{{ states[trigger.entity_id].name }}"
-  sensor_area: "{{ states[trigger.entity_id].attributes.friendly_name }}"
-  detection_time: "{{ now().strftime('%H:%M:%S') }}"
-  notification_title: "⚠ Water Leak Detected!"
-  notification_message: >
-    Water detected by {{ sensor_name }} in {{ sensor_area }} at {{ detection_time }}
+    domain: binary_sensor
+    device_id: !input water_sensor
 
 condition: []
 
 action:
-  - service: !input notify_device
-    data:
-      title: "{{ notification_title }}"
-      message: "{{ notification_message }}"
-      data:
-        push:
-          category: "water_leak"
-          importance: high
-          priority: high
-          ttl: 0
-          tag: "water_leak_{{ trigger.entity_id }}"
-          group: water_leak
-          color: "#ff0000"
-          sticky: true
-          vibration: true
-
-  - service: persistent_notification.create
-    data:
-      title: "{{ notification_title }}"
-      message: "{{ notification_message }}"
-      notification_id: "water_leak_{{ trigger.entity_id }}"
-
-  - service: notify.email
-    data:
-      title: "{{ notification_title }}"
-      message: "{{ notification_message }}"
-      target: "{{ input.notification_email }}"
+  - device_id: !input notify_device
+    domain: mobile_app
+    type: notify
+    message: Water leak
