@@ -46,6 +46,12 @@ action:
       priority: high
       vibrationPattern: "100, 200, 100, 200, 500"
       channel: alarm_stream
+      push:
+        sound:
+          name: default
+          critical: 1
+          volume: 1.0
+
 
 
 mode: single
