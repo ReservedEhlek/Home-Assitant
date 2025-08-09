@@ -1,5 +1,5 @@
 blueprint:
-  name: Water Leak Notification v0.2
+  name: Water Leak Notification v0.3
   description: Sends a critical iOS alert and a rich HTML-formatted email via SMTP when a water leak is detected.
   domain: automation
   input:
@@ -68,7 +68,7 @@ action:
               volume: 1.0
 
       - service: !input email_service
-        message: "{{ final_message }}"
+        message: "Water leak detected!"
         data:
           title: "🚨 WATER LEAK ALERT – {{ sensor_name }}"
           html: >
