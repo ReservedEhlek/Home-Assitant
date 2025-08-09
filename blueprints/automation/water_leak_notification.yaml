@@ -1,29 +1,29 @@
 blueprint:
-  name: Water Leak Notification
-  description: Sends a Critical Alert to iPhone and an email when a water leak is detected.
+  name: Water Leak Notification (iPhone + Email via SMTP)
+  description: Sends an iOS Critical Alert and an email via SMTP when a water leak is detected.
   domain: automation
   input:
     water_sensor:
       name: Water Leak Sensor
-      description: The binary sensor that detects a water leak.
+      description: The leak-detecting binary sensor.
       selector:
         entity:
           domain: binary_sensor
     notify_device:
-      name: Notify Device
-      description: The mobile device to send the iOS Critical Alert to.
+      name: Notify Device (mobile app)
+      description: The iOS device to receive a Critical Alert.
       selector:
         device:
           integration: mobile_app
-    email_target:
-      name: Email Target
-      description: The email address or notify service to send the alert to.
+    email_service:
+      name: Email Notify Service
+      description: The notify service for sending email (e.g., notify.zoho_smth).
+      default: "notify.zoho_smth"
       selector:
-        entity:
-          domain: notify
+        text: {}
     custom_prefix:
       name: Message Prefix (Optional)
-      description: Text to appear before the sensor name and time.
+      description: Text prefixed to the notification.
       default: "🚨 Water leak detected!"
       selector:
         text: {}
@@ -51,11 +51,9 @@ action:
               name: default
               critical: 1
               volume: 1.0
-      - service: notify.send_message
-        target:
-          entity_id: !input email_target
+      - service: "{{ email_service }}"
         data:
-          message: "{{ final_message }}"
           title: "🚨 Water Leak Alert"
+          message: "{{ final_message }}"
 
 mode: single
