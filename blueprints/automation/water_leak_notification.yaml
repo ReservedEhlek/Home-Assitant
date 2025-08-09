@@ -1,0 +1,102 @@
+blueprint:
+  name: Water Leak Detection and Alert
+  description: >
+    Creates an automation for IKEA BADRING water leak sensors that:
+    - Sends mobile push notifications
+    - Shows persistent notifications in HA
+    - Sends email alerts
+    - Changes selected lights to red
+  domain: automation
+  input:
+    water_sensor:
+      name: Water Leak Sensor
+      description: Select the water leak sensor to monitor
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: moisture
+    notification_email:
+      name: Email Address
+      description: Email address to send notifications to
+      selector:
+        text:
+    light_choice_type:
+      name: Light Selection Type
+      description: Choose whether to select individual lights or an area
+      selector:
+        select:
+          options:
+            - Individual Lights
+            - Area
+    lights:
+      name: Select Lights
+      description: Select specific lights to turn red (only if Individual Lights is selected)
+      selector:
+        target:
+          entity:
+            domain: light
+      default: {}
+    area:
+      name: Select Area
+      description: Select an area whose lights will turn red (only if Area is selected)
+      selector:
+        area:
+      default: {}
+
+trigger:
+  - platform: state
+    entity_id: !input water_sensor
+    to: "on"
+
+variables:
+  sensor_name: "{{ states[trigger.entity_id].name }}"
+  sensor_area: "{{ states[trigger.entity_id].attributes.friendly_name }}"
+  detection_time: "{{ now().strftime('%H:%M:%S') }}"
+  notification_title: "⚠ Water Leak Detected!"
+  notification_message: >
+    Water detected by {{ sensor_name }} in {{ sensor_area }} at {{ detection_time }}
+
+condition: []
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ input.light_choice_type == 'Individual Lights' }}"
+        sequence:
+          - service: light.turn_on
+            target: !input lights
+            data:
+              rgb_color: [255, 0, 0]
+              brightness_pct: 100
+      - conditions:
+          - condition: template
+            value_template: "{{ input.light_choice_type == 'Area' }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              area_id: !input area
+            data:
+              rgb_color: [255, 0, 0]
+              brightness_pct: 100
+
+  - service: notify.mobile_app
+    data:
+      title: "{{ notification_title }}"
+      message: "{{ notification_message }}"
+      data:
+        push:
+          category: "water_leak"
+        tag: "water_leak_{{ trigger.entity_id }}"
+
+  - service: persistent_notification.create
+    data:
+      title: "{{ notification_title }}"
+      message: "{{ notification_message }}"
+      notification_id: "water_leak_{{ trigger.entity_id }}"
+
+  - service: notify.email
+    data:
+      title: "{{ notification_title }}"
+      message: "{{ notification_message }}"
+      target: "{{ input.notification_email }}"
