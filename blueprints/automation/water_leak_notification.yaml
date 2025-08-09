@@ -22,6 +22,7 @@ trigger:
   - type: turned_on
     entity_id: !input water_sensor
     domain: binary_sensor
+    trigger: device
 
 condition: []
 
