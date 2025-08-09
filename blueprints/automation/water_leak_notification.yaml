@@ -1,6 +1,6 @@
 blueprint:
-  name: Water Leak Notification (Always iPhone Critical Alert)
-  description: Sends a Critical Alert with time and sensor name when a water leak is detected. Always uses iPhone-style alert settings.
+  name: Water Leak Notification
+  description: Sends a Critical Alert to iPhone and an email when a water leak is detected.
   domain: automation
   input:
     water_sensor:
@@ -11,10 +11,16 @@ blueprint:
           domain: binary_sensor
     notify_device:
       name: Notify Device
-      description: The mobile device to send the notification to.
+      description: The mobile device to send the iOS Critical Alert to.
       selector:
         device:
           integration: mobile_app
+    email_target:
+      name: Email Target
+      description: The email address or notify service to send the alert to.
+      selector:
+        entity:
+          domain: notify
     custom_prefix:
       name: Message Prefix (Optional)
       description: Text to appear before the sensor name and time.
@@ -34,15 +40,22 @@ variables:
   final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
 
 action:
-  - device_id: !input notify_device
-    domain: mobile_app
-    type: notify
-    message: "{{ final_message }}"
-    data:
-      push:
-        sound:
-          name: default
-          critical: 1
-          volume: 1.0
+  - parallel:
+      - device_id: !input notify_device
+        domain: mobile_app
+        type: notify
+        message: "{{ final_message }}"
+        data:
+          push:
+            sound:
+              name: default
+              critical: 1
+              volume: 1.0
+      - service: notify.send_message
+        target:
+          entity_id: !input email_target
+        data:
+          message: "{{ final_message }}"
+          title: "🚨 Water Leak Alert"
 
 mode: single
