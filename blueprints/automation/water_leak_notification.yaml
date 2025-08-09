@@ -45,10 +45,11 @@ variables:
   prefix: !input custom_prefix
   final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
   recipients_list: >-
-    {% if (email_recipients | trim) != "" %}
-      {{ email_recipients.split(',') | map('trim') | list }}
+    {% set r = email_recipients | trim %}
+    {% if r != "" %}
+      {{ r.split(',') | map('trim') | list }}
     {% else %}
-      []
+      {{ none }}
     {% endif %}
 
 action:
@@ -66,12 +67,18 @@ action:
               volume: 1.0
 
       # Email via SMTP
-      - service: !input email_service
-        data:
-          title: "🚨 Water Leak Alert"
-          message: "{{ final_message }}"
-          {% if recipients_list | length > 0 %}
-          target: "{{ recipients_list }}"
-          {% endif %}
+      - choose:
+          - conditions: "{{ recipients_list is not none }}"
+            sequence:
+              - service: !input email_service
+                data:
+                  title: "🚨 Water Leak Alert"
+                  message: "{{ final_message }}"
+                  target: "{{ recipients_list }}"
+        default:
+          - service: !input email_service
+            data:
+              title: "🚨 Water Leak Alert"
+              message: "{{ final_message }}"
 
 mode: single
