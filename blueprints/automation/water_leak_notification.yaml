@@ -44,7 +44,12 @@ variables:
   time_now: "{{ now().strftime('%H:%M:%S') }}"
   prefix: !input custom_prefix
   final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
-  recipients: "{{ (!input email_recipients) | default('', true) }}"
+  recipients_list: >-
+    {% if (email_recipients | trim) != "" %}
+      {{ email_recipients.split(',') | map('trim') | list }}
+    {% else %}
+      []
+    {% endif %}
 
 action:
   - parallel:
@@ -65,9 +70,8 @@ action:
         data:
           title: "🚨 Water Leak Alert"
           message: "{{ final_message }}"
-          {% if recipients != "" %}
-          target:
-            - "{{ recipients }}"
+          {% if recipients_list | length > 0 %}
+          target: "{{ recipients_list }}"
           {% endif %}
 
 mode: single
