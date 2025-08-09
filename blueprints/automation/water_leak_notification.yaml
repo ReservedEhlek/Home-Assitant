@@ -1,6 +1,6 @@
 blueprint:
-  name: Water Leak Notification
-  description: Send a mobile notification when a water leak sensor is triggered.
+  name: Water Leak Notification (Dynamic Message)
+  description: Send a mobile notification when a water leak sensor is triggered, with automatic time and sensor name in the message.
   domain: automation
   input:
     water_sensor:
@@ -15,10 +15,10 @@ blueprint:
       selector:
         device:
           integration: mobile_app
-    message:
-      name: Notification Message
-      description: The message to send when a leak is detected.
-      default: "Water leak detected!"
+    custom_prefix:
+      name: Message Prefix (Optional)
+      description: Text to appear before the sensor name and time.
+      default: "🚨 Water leak detected!"
       selector:
         text: {}
 
@@ -27,10 +27,25 @@ trigger:
     entity_id: !input water_sensor
     to: "on"
 
+variables:
+  sensor_name: "{{ state_attr(trigger.entity_id, 'friendly_name') or trigger.entity_id }}"
+  time_now: "{{ now().strftime('%H:%M:%S') }}"
+  prefix: !input custom_prefix
+  final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
+
 action:
   - device_id: !input notify_device
     domain: mobile_app
     type: notify
-    message: !input message
+    message: "{{ final_message }}"
+    data:
+      importance: high
+      sticky: true
+      persistent: true
+      ttl: 0
+      priority: high
+      vibrationPattern: "100, 200, 100, 200, 500"
+      channel: alarm_stream
+
 
 mode: single
