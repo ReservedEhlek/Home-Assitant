@@ -1,5 +1,5 @@
 blueprint:
-  name: Water Leak Notification (iPhone + HTML Email via SMTP)
+  name: Water Leak Notification v0.1
   description: Sends a critical iOS alert and a rich HTML-formatted email via SMTP when a water leak is detected.
   domain: automation
   input:
