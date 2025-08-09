@@ -1,11 +1,11 @@
 blueprint:
-  name: Water Leak Notification (iPhone + Email via SMTP)
-  description: Sends an iOS Critical Alert and an email via SMTP when a water leak is detected. Allows overriding the recipient(s) in the automation.
+  name: Water Leak Notification (iPhone + HTML Email via SMTP)
+  description: Sends a critical iOS alert and a rich HTML-formatted email via SMTP when a water leak is detected.
   domain: automation
   input:
     water_sensor:
       name: Water Leak Sensor
-      description: The leak-detecting binary sensor.
+      description: Binary sensor that detects water leakage.
       selector:
         entity:
           domain: binary_sensor
@@ -17,19 +17,19 @@ blueprint:
           integration: mobile_app
     email_service:
       name: Email Notify Service
-      description: The SMTP notify service name (e.g., notify.zoho_smth).
+      description: The SMTP notify service (e.g., notify.zoho_smth).
       default: "notify.zoho_smth"
       selector:
         text: {}
     email_recipients:
       name: Override Recipient(s) (Optional)
-      description: Comma-separated email addresses. Leave empty to use default from SMTP config.
+      description: Comma-separated email addresses. Leave blank to use default from SMTP config.
       default: ""
       selector:
         text: {}
     custom_prefix:
       name: Message Prefix (Optional)
-      description: Text prefixed to the notification.
+      description: Text prefixed to notifications.
       default: "🚨 Water leak detected!"
       selector:
         text: {}
@@ -41,9 +41,10 @@ trigger:
 
 variables:
   sensor_name: "{{ state_attr(trigger.entity_id, 'friendly_name') or trigger.entity_id }}"
-  time_now: "{{ now().strftime('%H:%M:%S') }}"
+  location: "{{ area_name(trigger.entity_id) or 'Unknown location' }}"
+  time_now: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
   prefix: !input custom_prefix
-  final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nTime: {{ time_now }}"
+  final_message: "{{ prefix }}\nSensor: {{ sensor_name }}\nLocation: {{ location }}\nTime: {{ time_now }}"
   recipients_list: >-
     {% set r = email_recipients | trim %}
     {% if r != "" %}
@@ -66,19 +67,55 @@ action:
               critical: 1
               volume: 1.0
 
-      # Email via SMTP
+      # HTML Email via SMTP
       - choose:
           - conditions: "{{ recipients_list is not none }}"
             sequence:
               - service: !input email_service
                 data:
-                  title: "🚨 Water Leak Alert"
-                  message: "{{ final_message }}"
+                  title: "🚨 WATER LEAK ALERT – {{ sensor_name }}"
+                  html: >-
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="UTF-8">
+                      <style>
+                        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+                        .container { max-width: 600px; margin: auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        .header { background-color: #d32f2f; color: #fff; padding: 20px; text-align: center; font-size: 24px; }
+                        .content { padding: 20px; color: #333; line-height: 1.5; }
+                        .alert-box { border: 2px solid #d32f2f; background: #ffebee; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+                        .footer { background: #eeeeee; text-align: center; padding: 10px; font-size: 12px; color: #777; }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="container">
+                        <div class="header">🚨 WATER LEAK ALERT 🚨</div>
+                        <div class="content">
+                          <div class="alert-box">
+                            <strong>Sensor:</strong> {{ sensor_name }}<br>
+                            <strong>Location:</strong> {{ location }}<br>
+                            <strong>Detected At:</strong> {{ time_now }}
+                          </div>
+                          <p><strong>Action Recommended:</strong> Inspect immediately and shut off the water supply if needed. Potential for flooding exists.</p>
+                        </div>
+                        <div class="footer">
+                          Automated alert from Home Assistant.<br>
+                          Please do not reply.
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  {% if recipients_list is not none %}
                   target: "{{ recipients_list }}"
+                  {% endif %}
         default:
           - service: !input email_service
             data:
-              title: "🚨 Water Leak Alert"
-              message: "{{ final_message }}"
+              title: "🚨 WATER LEAK ALERT – {{ sensor_name }}"
+              html: >-
+                <!DOCTYPE html>
+                <!-- ... same HTML content above ... -->
+              # No target field so default recipient(s) from config apply
 
 mode: single
