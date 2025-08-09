@@ -23,8 +23,7 @@ blueprint:
       name: Mobile Device
       description: Select your mobile device notification service
       selector:
-        entity:
-          domain: notify
+        device:
           integration: mobile_app
     light_choice_type:
       name: Light Selection Type
@@ -85,14 +84,21 @@ action:
               rgb_color: [255, 0, 0]
               brightness_pct: 100
 
-  - service: "{{ notify_device }}"
+  - service: !input notify_device
     data:
       title: "{{ notification_title }}"
       message: "{{ notification_message }}"
       data:
         push:
           category: "water_leak"
-        tag: "water_leak_{{ trigger.entity_id }}"
+          importance: high
+          priority: high
+          ttl: 0
+          tag: "water_leak_{{ trigger.entity_id }}"
+          group: water_leak
+          color: "#ff0000"
+          sticky: true
+          vibration: true
 
   - service: persistent_notification.create
     data:
