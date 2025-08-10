@@ -104,6 +104,6 @@ action:
                 </div>
               </body>
               </html>      
-          recipients: "{{ recipients_list | default(none) }}"          
+          target: "{{ recipients_list | default(none) }}"          
 
 mode: single
