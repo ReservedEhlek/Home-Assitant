@@ -178,7 +178,7 @@ action:
             value_template: "{{ trigger.to_state.state == 'off' }}"
           - condition: template
             value_template: >
-              {% if not is_defined(motion_off_blocker) %}
+              {% if motion_off_blocker is not defined %}
                 true
               {% else %}
                 {{ motion_off_blocker_boolean == (states[motion_off_blocker].state == 'off') }}
