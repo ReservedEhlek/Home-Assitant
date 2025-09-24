@@ -8,7 +8,6 @@ blueprint:
     - Optional time slots and luminance level settings.
     - Sun horizon and elevation adjustments for more granular control.
     - Wait time for turning off lights after no motion is detected.
-    - Optional scene activation when no motion is detected.
     - Automation and motion-off blockers for more customization.
 
   domain: automation
@@ -108,24 +107,6 @@ blueprint:
       default: false
       selector:
         boolean: {}
-    scene_ambient:
-      name: Ambient Scene (Optional)
-      description: Scene to activate when no motion is detected.
-      default: scene.none
-      selector:
-        entity:
-          domain: scene
-          multiple: false
-    time_scene_ambient_start:
-      name: Ambient Scene Start Time (Optional)
-      default: "00:00:00"
-      selector:
-        time: {}
-    time_scene_ambient_end:
-      name: Ambient Scene End Time (Optional)
-      default: "00:00:00"
-      selector:
-        time: {}
 
 mode: restart
 max_exceeded: silent
@@ -171,7 +152,7 @@ action:
           - condition: time
             after: !input time_default_start
             before: !input time_default_end
-          - service: homeassistant.turn_on
+          - service: light.turn_on 
             target: !input light_target
       - conditions:
           - condition: template
@@ -184,5 +165,5 @@ action:
                 {{ motion_off_blocker_boolean == (states[motion_off_blocker].state == 'off') }}
               {% endif %}
         sequence:
-          - service: homeassistant.turn_off
+          - service: light.turn_off 
             target: !input light_target
