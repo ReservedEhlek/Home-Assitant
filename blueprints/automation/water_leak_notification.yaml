@@ -22,7 +22,7 @@ blueprint:
       selector:
         text: {}
     email_recipients:
-      name: Override Recipient(s) (Optional)
+      name: Override Recipient(s)
       description: Comma-separated email addresses. Leave blank to use default from SMTP config.
       default: ""
       selector:
