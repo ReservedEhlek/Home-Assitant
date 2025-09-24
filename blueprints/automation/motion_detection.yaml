@@ -144,7 +144,7 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {% if not is_defined(automation_blocker) %}
+      {% if automation_blocker is not defined %}
         true
       {% else %}
         {{ automation_blocker_boolean == (states[automation_blocker].state == 'on') }}
