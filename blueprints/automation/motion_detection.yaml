@@ -184,16 +184,5 @@ action:
                 {{ motion_off_blocker_boolean == (states[motion_off_blocker].state == 'off') }}
               {% endif %}
         sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ scene_ambient != 'scene.none' }}"
-                  - condition: time
-                    after: !input time_scene_ambient_start
-                    before: !input time_scene_ambient_end
-                sequence:
-                  - service: scene.turn_on
-                    entity_id: !input scene_ambient
-            default:
-              - service: homeassistant.turn_off
-                target: !input light_target
+          - service: homeassistant.turn_off
+            target: !input light_target
