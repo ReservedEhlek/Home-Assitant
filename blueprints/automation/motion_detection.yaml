@@ -186,7 +186,7 @@ action:
         sequence:
           - choose:
               - conditions:
-                  - "{{ scene_ambient != 'scene.none' }}"
+                  - {{ scene_ambient != 'scene.none' }}
                   - condition: time
                     after: !input time_scene_ambient_start
                     before: !input time_scene_ambient_end
