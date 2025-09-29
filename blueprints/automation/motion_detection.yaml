@@ -111,6 +111,14 @@ blueprint:
 mode: restart
 max_exceeded: silent
 
+variables:
+  automation_blocker: !input automation_blocker
+  automation_blocker_boolean: !input automation_blocker_boolean
+  elevation: !input elevation
+  elevation_adjustment: !input elevation_adjustment
+  motion_off_blocker: !input motion_off_blocker
+  motion_off_blocker_boolean: !input motion_off_blocker_boolean
+
 trigger:
   - platform: state
     entity_id: !input motion_entity
@@ -125,10 +133,10 @@ trigger:
 condition:
   - condition: template
     value_template: >
-      {% if automation_blocker is not defined %}
+      {% if automation_blocker == none %}
         true
       {% else %}
-        {{ automation_blocker_boolean == (states[automation_blocker].state == 'on') }}
+        {{ automation_blocker_boolean == (states(automation_blocker) == 'on') }}
       {% endif %}
   - condition: template
     value_template: >
@@ -159,10 +167,10 @@ action:
             value_template: "{{ trigger.to_state.state == 'off' }}"
           - condition: template
             value_template: >
-              {% if motion_off_blocker is not defined %}
+              {% if motion_off_blocker == none %}
                 true
               {% else %}
-                {{ motion_off_blocker_boolean == (states[motion_off_blocker].state == 'off') }}
+                {{ motion_off_blocker_boolean == (states(motion_off_blocker) == 'off') }}
               {% endif %}
         sequence:
           - service: light.turn_off 
