@@ -1,5 +1,5 @@
 blueprint:
-  name: VALLHORN Motion Sensor
+  name: VALLHORN Motion Sensor sun
   description: >
     This blueprint controls lights or scenes based on motion detected by the VALLHORN Wireless Motion Sensor.
 
