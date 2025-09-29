@@ -122,23 +122,23 @@ trigger:
     to: "off"
     for: !input no_motion_wait
 
-# condition:
-#   - condition: template
-#     value_template: >
-#       {% if automation_blocker is not defined %}
-#         true
-#       {% else %}
-#         {{ automation_blocker_boolean == (states[automation_blocker].state == 'on') }}
-#       {% endif %}
-#   - condition: template
-#     value_template: >
-#       {% if elevation == 'Always' %}
-#         true
-#       {% else %}
-#         {% set sun_elevation = state_attr('sun.sun', 'elevation') | default(-100) %}
-#         {{ (sun_elevation > elevation_adjustment and elevation == 'Above horizon') or
-#            (sun_elevation <= elevation_adjustment and elevation == 'Below horizon') }}
-#       {% endif %}
+condition:
+  - condition: template
+    value_template: >
+      {% if automation_blocker is not defined %}
+        true
+      {% else %}
+        {{ automation_blocker_boolean == (states[automation_blocker].state == 'on') }}
+      {% endif %}
+  - condition: template
+    value_template: >
+      {% if elevation == 'Always' %}
+        true
+      {% else %}
+        {% set sun_elevation = state_attr('sun.sun', 'elevation') | default(-100) %}
+        {{ (sun_elevation > elevation_adjustment and elevation == 'Above horizon') or
+           (sun_elevation <= elevation_adjustment and elevation == 'Below horizon') }}
+      {% endif %}
 
 action:
   - choose:
