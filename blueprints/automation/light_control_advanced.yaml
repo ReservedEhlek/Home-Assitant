@@ -1,0 +1,243 @@
+blueprint:
+  name: Advanced Light Control with Manual Override
+  description: >
+    Comprehensive light control automation with advanced features:
+    
+    Key features:
+    - Automatic on/off scheduling with configurable start and end times
+    - Manual override detection - if turned off manually, stays off until next cycle
+    - Day of the week selection for fine-grained control
+    - Optional sun azimuth angle condition with configurable degrees
+    - Supports both light entities and smart plug/switch entities
+    - Remembers manual override state using input_boolean helper
+    - Intelligent state management to prevent unwanted activations
+
+  domain: automation
+  input:
+    target_entities:
+      name: Target Entities
+      description: Select lights, switches, or smart plugs to control
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - switch
+    
+    start_time:
+      name: Start Time
+      description: Time when lights should automatically turn on
+      default: "18:00:00"
+      selector:
+        time: {}
+    
+    end_time:
+      name: End Time
+      description: Time when lights should automatically turn off
+      default: "23:00:00"
+      selector:
+        time: {}
+    
+    weekdays:
+      name: Days of the Week
+      description: Select which days this automation should run
+      default:
+        - monday
+        - tuesday
+        - wednesday
+        - thursday
+        - friday
+        - saturday
+        - sunday
+      selector:
+        select:
+          options:
+            - label: Monday
+              value: monday
+            - label: Tuesday
+              value: tuesday
+            - label: Wednesday
+              value: wednesday
+            - label: Thursday
+              value: thursday
+            - label: Friday
+              value: friday
+            - label: Saturday
+              value: saturday
+            - label: Sunday
+              value: sunday
+          multiple: true
+    
+    use_sun_azimuth:
+      name: Use Sun Azimuth Condition
+      description: Enable sun azimuth angle condition
+      default: false
+      selector:
+        boolean: {}
+    
+    sun_azimuth_threshold:
+      name: Sun Azimuth Threshold
+      description: Only activate when sun azimuth is above this angle (degrees)
+      default: 180
+      selector:
+        number:
+          min: 0
+          max: 360
+          step: 1
+          unit_of_measurement: "°"
+          mode: slider
+    
+    manual_override_helper:
+      name: Manual Override Helper
+      description: Input boolean to track manual override state (create one in Helpers section)
+      selector:
+        entity:
+          domain: input_boolean
+    
+    brightness_level:
+      name: Brightness Level (Optional)
+      description: Brightness level for lights (1-255). Leave empty to use last brightness.
+      default: ""
+      selector:
+        number:
+          min: 1
+          max: 255
+          step: 1
+          mode: slider
+    
+    illuminance_sensor:
+      name: Illuminance Sensor (Optional)
+      description: Only turn on lights if illuminance is below threshold
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+          device_class: illuminance
+    
+    illuminance_threshold:
+      name: Illuminance Threshold
+      description: Maximum illuminance level to allow light activation (lux)
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 1
+          unit_of_measurement: "lx"
+          mode: slider
+
+mode: restart
+max_exceeded: silent
+
+variables:
+  target_entities: !input target_entities
+  weekdays: !input weekdays
+  use_sun_azimuth: !input use_sun_azimuth
+  sun_azimuth_threshold: !input sun_azimuth_threshold
+  manual_override_helper: !input manual_override_helper
+  brightness_level: !input brightness_level
+  illuminance_sensor: !input illuminance_sensor
+  illuminance_threshold: !input illuminance_threshold
+
+trigger:
+  # Time-based triggers
+  - platform: time
+    at: !input start_time
+    id: "start_time"
+  
+  - platform: time
+    at: !input end_time
+    id: "end_time"
+  
+  # Manual override detection - when any target entity is turned off manually
+  - platform: state
+    entity_id: !input target_entities
+    to: "off"
+    id: "manual_off"
+  
+  # Reset manual override at start of new day
+  - platform: time
+    at: "00:00:01"
+    id: "daily_reset"
+
+condition:
+  # Check if today is one of the selected weekdays
+  - condition: template
+    value_template: >
+      {% set today = now().strftime('%A').lower() %}
+      {{ today in weekdays }}
+
+action:
+  - choose:
+      # Start time trigger - turn on lights
+      - conditions:
+          - condition: trigger
+            id: "start_time"
+          # Check manual override status
+          - condition: state
+            entity_id: !input manual_override_helper
+            state: "off"
+          # Check sun azimuth if enabled
+          - condition: template
+            value_template: >
+              {% if use_sun_azimuth %}
+                {% set sun_azimuth = state_attr('sun.sun', 'azimuth') | default(0) %}
+                {{ sun_azimuth >= sun_azimuth_threshold }}
+              {% else %}
+                true
+              {% endif %}
+          # Check illuminance if sensor is provided
+          - condition: template
+            value_template: >
+              {% if illuminance_sensor != "" %}
+                {{ states(illuminance_sensor) | default(0) | float <= illuminance_threshold }}
+              {% else %}
+                true
+              {% endif %}
+        sequence:
+          - choose:
+              # If brightness is specified and target has light entities
+              - conditions:
+                  - condition: template
+                    value_template: "{{ brightness_level != '' }}"
+                sequence:
+                  - service: light.turn_on
+                    target: !input target_entities
+                    data:
+                      brightness: !input brightness_level
+                  - service: switch.turn_on
+                    target: !input target_entities
+            default:
+              # Default action - turn on without brightness
+              - service: homeassistant.turn_on
+                target: !input target_entities
+
+      # End time trigger - turn off lights
+      - conditions:
+          - condition: trigger
+            id: "end_time"
+        sequence:
+          - service: homeassistant.turn_off
+            target: !input target_entities
+
+      # Manual override detection
+      - conditions:
+          - condition: trigger
+            id: "manual_off"
+          # Only set override if it happened during active hours
+          - condition: time
+            after: !input start_time
+            before: !input end_time
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input manual_override_helper
+
+      # Daily reset of manual override
+      - conditions:
+          - condition: trigger
+            id: "daily_reset"
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input manual_override_helper
