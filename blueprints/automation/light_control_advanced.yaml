@@ -1,16 +1,15 @@
 blueprint:
-  name: Advanced Light Control with Manual Override
+  name: Advanced Light Control
   description: >
     Comprehensive light control automation with advanced features:
     
     Key features:
     - Automatic on/off scheduling with configurable start and end times
-    - Manual override detection - if turned off manually, stays off until next cycle
     - Day of the week selection for fine-grained control
     - Optional sun azimuth angle condition with configurable degrees
     - Supports both light entities and smart plug/switch entities
-    - Remembers manual override state using input_boolean helper
-    - Intelligent state management to prevent unwanted activations
+    - Optional illuminance sensor integration
+    - Configurable brightness levels for lights
 
   domain: automation
   input:
@@ -87,23 +86,12 @@ blueprint:
           unit_of_measurement: "°"
           mode: slider
     
-    manual_override_helper:
-      name: Manual Override Helper
-      description: Input boolean to track manual override state (create one in Helpers section)
-      selector:
-        entity:
-          domain: input_boolean
-    
     brightness_level:
       name: Brightness Level (Optional)
       description: Brightness level for lights (1-255). Leave empty to use last brightness.
       default: ""
       selector:
-        number:
-          min: 1
-          max: 255
-          step: 1
-          mode: slider
+        text: {}
     
     illuminance_sensor:
       name: Illuminance Sensor (Optional)
@@ -134,7 +122,6 @@ variables:
   weekdays: !input weekdays
   use_sun_azimuth: !input use_sun_azimuth
   sun_azimuth_threshold: !input sun_azimuth_threshold
-  manual_override_helper: !input manual_override_helper
   brightness_level: !input brightness_level
   illuminance_sensor: !input illuminance_sensor
   illuminance_threshold: !input illuminance_threshold
@@ -148,17 +135,6 @@ trigger:
   - platform: time
     at: !input end_time
     id: "end_time"
-  
-  # Manual override detection - when any target entity is turned off manually
-  - platform: state
-    entity_id: !input target_entities
-    to: "off"
-    id: "manual_off"
-  
-  # Reset manual override at start of new day
-  - platform: time
-    at: "00:00:01"
-    id: "daily_reset"
 
 condition:
   # Check if today is one of the selected weekdays
@@ -173,10 +149,6 @@ action:
       - conditions:
           - condition: trigger
             id: "start_time"
-          # Check manual override status
-          - condition: state
-            entity_id: !input manual_override_helper
-            state: "off"
           # Check sun azimuth if enabled
           - condition: template
             value_template: >
@@ -199,12 +171,12 @@ action:
               # If brightness is specified and target has light entities
               - conditions:
                   - condition: template
-                    value_template: "{{ brightness_level != '' }}"
+                    value_template: "{{ brightness_level != '' and brightness_level != 'none' }}"
                 sequence:
                   - service: light.turn_on
                     target: !input target_entities
                     data:
-                      brightness: !input brightness_level
+                      brightness: "{{ brightness_level | int }}"
                   - service: switch.turn_on
                     target: !input target_entities
             default:
@@ -219,25 +191,3 @@ action:
         sequence:
           - service: homeassistant.turn_off
             target: !input target_entities
-
-      # Manual override detection
-      - conditions:
-          - condition: trigger
-            id: "manual_off"
-          # Only set override if it happened during active hours
-          - condition: time
-            after: !input start_time
-            before: !input end_time
-        sequence:
-          - service: input_boolean.turn_on
-            target:
-              entity_id: !input manual_override_helper
-
-      # Daily reset of manual override
-      - conditions:
-          - condition: trigger
-            id: "daily_reset"
-        sequence:
-          - service: input_boolean.turn_off
-            target:
-              entity_id: !input manual_override_helper
