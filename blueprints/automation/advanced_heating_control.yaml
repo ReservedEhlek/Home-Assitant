@@ -3465,6 +3465,7 @@ actions:
                 - action: "{{ 'tado.set_climate_temperature_offset' }}"
                   data:
                     offset: "{{ offset }}"
+                  target:
                     entity_id: "{{ thermostat }}"
                 - delay: !input input_action_call_delay
 
@@ -3627,8 +3628,9 @@ actions:
                       then:
                         - action: climate.set_hvac_mode
                           data:
-                            entity_id: "{{ thermostat }}"
                             hvac_mode: "{{ mode }}"
+                          target:
+                            entity_id: "{{ thermostat }}"
                         - delay: !input input_action_call_delay
 
                     - if:
@@ -3637,8 +3639,9 @@ actions:
                       then:
                         - action: climate.set_temperature
                           data:
-                            entity_id: "{{ thermostat }}"
                             temperature: "{{ temp_target | float }}"
+                          target:
+                            entity_id: "{{ thermostat }}"
                         - delay: !input input_action_call_delay
 
       - if:
