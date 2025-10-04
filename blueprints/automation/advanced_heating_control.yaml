@@ -1,5 +1,5 @@
 blueprint:
-  name: 🔥 Advanced Heating Control V5
+  name: 🔥 Advanced Heating Control V5 - Edited
   author: panhans
   homeassistant:
     min_version: "2024.10.0"
